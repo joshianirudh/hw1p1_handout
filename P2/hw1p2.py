@@ -275,11 +275,7 @@ class Network(nn.Module):
             nn.BatchNorm1d(1024),
             torch.nn.ReLU(),
             nn.Dropout(0.3),
-            torch.nn.Linear(1024, 2048),
-            nn.BatchNorm1d(2048),
-            torch.nn.ReLU(),
-            nn.Dropout(0.3),
-            torch.nn.Linear(2048, 1024),
+            torch.nn.Linear(1024, 1024),
             nn.BatchNorm1d(1024),
             torch.nn.ReLU(),
             nn.Dropout(0.3),
@@ -287,11 +283,7 @@ class Network(nn.Module):
             nn.BatchNorm1d(512),
             torch.nn.ReLU(),
             nn.Dropout(0.2),
-            torch.nn.Linear(512, 256),
-            nn.BatchNorm1d(256),
-            torch.nn.ReLU(),
-            nn.Dropout(0.2),
-            torch.nn.Linear(256, output_size)
+            torch.nn.Linear(512, output_size)
         )
 
         if config['weight_initialization'] is not None:
