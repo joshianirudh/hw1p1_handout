@@ -508,7 +508,7 @@ for epoch in range(config['epochs']):
 
 Before we get to the following code, make sure to see the format of submission given in *sample_submission.csv*. Once you have done so, it is time to fill the following function to complete your inference on test data. Refer the eval function from previous cells to get an idea of how to go about completing this function.
 """
-
+torch.save(model.state_dict(), "model.pth")
 def test(model, test_loader):
     ### What you call for model to perform inference?
     model.eval() # TODO train or eval?
