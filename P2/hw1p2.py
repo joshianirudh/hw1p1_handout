@@ -237,22 +237,22 @@ print("Train dataset samples = {}, batches = {}".format(train_data.__len__(), le
 print("Validation dataset samples = {}, batches = {}".format(val_data.__len__(), len(val_loader)))
 print("Test dataset samples = {}, batches = {}".format(test_data.__len__(), len(test_loader)))
 
-import matplotlib.pyplot as plt
-
-# Testing code to check if your data loaders are working
-for data in train_loader:
-    frames, phoneme = data
-    print(frames.shape, phoneme.shape)
-
-    # Visualize sample mfcc to inspect and verify everything is correctly done, especially augmentations
-    plt.figure(figsize=(10, 6))
-    plt.imshow(frames[0].numpy().T, aspect='auto', origin='lower', cmap='viridis')
-    plt.xlabel('Time')
-    plt.ylabel('Features')
-    plt.title('Feature Representation')
-    plt.show()
-
-    break
+# import matplotlib.pyplot as plt
+#
+# # Testing code to check if your data loaders are working
+# for data in train_loader:
+#     frames, phoneme = data
+#     print(frames.shape, phoneme.shape)
+#
+#     # Visualize sample mfcc to inspect and verify everything is correctly done, especially augmentations
+#     plt.figure(figsize=(10, 6))
+#     plt.imshow(frames[0].numpy().T, aspect='auto', origin='lower', cmap='viridis')
+#     plt.xlabel('Time')
+#     plt.ylabel('Features')
+#     plt.title('Feature Representation')
+#     plt.show()
+#
+#     break
 
 # Testing code to check if your validation data loaders are working
 all = []
@@ -268,15 +268,15 @@ class Network(nn.Module):
 
         self.model = nn.Sequential(
             torch.nn.Linear(input_size, 512),
-            nn.BatchNorm1d(512)
+            nn.BatchNorm1d(512),
             torch.nn.ReLU(),
             nn.Dropout(0.2),
             torch.nn.Linear(512, 1024),
-            nn.BatchNorm1d(1024)
+            nn.BatchNorm1d(1024),
             torch.nn.ReLU(),
             nn.Dropout(0.3),
             torch.nn.Linear(1024, 2048),
-            nn.BatchNorm1d(2048)
+            nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
             nn.Dropout(0.3),
             torch.nn.Linear(2048, 1024),
@@ -328,7 +328,7 @@ class Network(nn.Module):
 
 INPUT_SIZE  = (2*config['context'] + 1) * 28 # Why is this the case?
 model = Network(INPUT_SIZE, len(train_data.phonemes)).to(device)
-summary(model, frames.to(device))
+print(summary(model, frames.to(device)))
 
 
 criterion = torch.nn.CrossEntropyLoss() # Defining Loss function.
