@@ -221,7 +221,7 @@ val_loader = torch.utils.data.DataLoader(
 
 test_loader = torch.utils.data.DataLoader(
     dataset     = test_data,
-    num_workers = 2,
+    num_workers = 0,
     batch_size  = config['batch_size'],
     pin_memory  = True,
     shuffle     = False
@@ -509,31 +509,36 @@ for epoch in range(config['epochs']):
 Before we get to the following code, make sure to see the format of submission given in *sample_submission.csv*. Once you have done so, it is time to fill the following function to complete your inference on test data. Refer the eval function from previous cells to get an idea of how to go about completing this function.
 """
 torch.save(model.state_dict(), "model.pth")
+
+
 def test(model, test_loader):
     ### What you call for model to perform inference?
-    model.eval() # TODO train or eval?
+    model.eval()  # TODO train or eval?
 
     ### List to store predicted phonemes of test data
     test_predictions = []
 
     ### Which mode do you need to avoid gradients?
-    with torch.no_grad(): # TODO
+    with torch.no_grad():  # TODO
         for i, mfccs in enumerate(tqdm(test_loader)):
+            mfccs = mfccs.to(device)
 
-            mfccs   = mfccs.to(device)
-
-            logits  = model(mfccs)
+            logits = model(mfccs)
 
             ### Get most likely predicted phoneme with argmax
-            predicted_phonemes = torch.argmax(logits, dim=1)
+            predicted_phonemes = torch.argmax(logits, dim=0)
 
             ### How do you store predicted_phonemes with test_predictions? Hint, look at eval
             # Remember the phonemes were converted to their corresponding integer indices earlier, and the results of the argmax is a list of the indices of the predicted phonemes.
             # So how do you get and store the actual predicted phonemes
             # TODO: Store predicted_phonemes
-            test_predictions.append([PHONEMES[i] for i in predicted_phonemes])
+            predicted_indices = torch.argmax(logits, dim=1)  # Shape: (batch_size,)
+            test_predictions.append(predicted_indices.cpu())
+    all_indices = torch.cat(test_predictions, dim=0)  # Shape: (total_samples,)
 
-    return torch.tensor(test_predictions).squeeze()
+    # Convert numerical indices to phoneme strings
+    phoneme_predictions = [PHONEMES[idx] for idx in all_indices.numpy()]
+    return phoneme_predictions
 
 predictions = test(model, test_loader)
 
