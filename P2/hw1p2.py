@@ -266,24 +266,35 @@ class Network(nn.Module):
     def __init__(self, input_size, output_size):
         super(Network, self).__init__()
 
+        # self.model = nn.Sequential(
+        #     torch.nn.Linear(input_size, 512),
+        #     nn.BatchNorm1d(512),
+        #     torch.nn.ReLU(),
+        #     nn.Dropout(0.2),
+        #     torch.nn.Linear(512, 1024),
+        #     nn.BatchNorm1d(1024),
+        #     torch.nn.ReLU(),
+        #     nn.Dropout(0.3),
+        #     torch.nn.Linear(1024, 1024),
+        #     nn.BatchNorm1d(1024),
+        #     torch.nn.ReLU(),
+        #     nn.Dropout(0.3),
+        #     torch.nn.Linear(1024, 512),
+        #     nn.BatchNorm1d(512),
+        #     torch.nn.ReLU(),
+        #     nn.Dropout(0.2),
+        #     torch.nn.Linear(512, output_size)
+        #
         self.model = nn.Sequential(
             torch.nn.Linear(input_size, 512),
-            nn.BatchNorm1d(512),
+            torch.nn.Dropout(0.2),
             torch.nn.ReLU(),
-            nn.Dropout(0.2),
-            torch.nn.Linear(512, 1024),
-            nn.BatchNorm1d(1024),
+            torch.nn.Linear(512, 256),
             torch.nn.ReLU(),
-            nn.Dropout(0.3),
-            torch.nn.Linear(1024, 1024),
-            nn.BatchNorm1d(1024),
+            torch.nn.Linear(256, 128),
+            torch.nn.Dropout(0.2),
             torch.nn.ReLU(),
-            nn.Dropout(0.3),
-            torch.nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
-            torch.nn.ReLU(),
-            nn.Dropout(0.2),
-            torch.nn.Linear(512, output_size)
+            torch.nn.Linear(128, output_size)
         )
 
         if config['weight_initialization'] is not None:
