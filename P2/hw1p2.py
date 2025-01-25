@@ -37,7 +37,7 @@ config = {
     'dropout': 0.25,
     'optimizers': 'SGD',
     'scheduler': 'ReduceLROnPlateau',
-    'epochs': 10,
+    'epochs': 30,
     'batch_size': 2048,
     'weight_decay': 0.05,
     'weight_initialization': None, # e.g kaiming_normal, kaiming_uniform, uniform, xavier_normal or xavier_uniform
