@@ -47,7 +47,6 @@ config = {
  }
 
 
-
 class AudioDataset(torch.utils.data.Dataset):
 
     def __init__(self, root, phonemes = PHONEMES, context=0, partition= "train-clean-100"): # Feel free to add more arguments
@@ -83,7 +82,7 @@ class AudioDataset(torch.utils.data.Dataset):
             # TODO: Load a single mfcc. Hint: Use numpy
             mfcc = np.load(os.path.join(self.mfcc_dir, mfcc_names[i]))
             # TODO: Do Cepstral Normalization of mfcc along the Time Dimension (Think about the correct axis)
-            mfccs_normalized = (mfcc - np.mean(mfcc, axis=1, keepdims=True))/ np.std(mfcc, axis=1, keepdims=True)
+            mfccs_normalized = (mfcc - np.mean(mfcc, axis=0, keepdims=True))/ np.std(mfcc, axis=0, keepdims=True)
 
 
             mfccs_normalized = torch.tensor(mfccs_normalized, dtype=torch.float32)
@@ -139,16 +138,17 @@ class AudioDataset(torch.utils.data.Dataset):
 
         return frames, phonemes
 
+
 class AudioTestDataset(torch.utils.data.Dataset):
 
-    def __init__(self, root, context=0, partition= "test-clean"): # Feel free to add more arguments
+    def __init__(self, root, context=0, partition="test-clean"):  # Feel free to add more arguments
 
         self.context = context
         self.subset = config['subset']
-        self.freq_masking = tat.FrequencyMasking(100)
-        self.time_masking = tat.TimeMasking(100)
+        # self.freq_masking = tat.FrequencyMasking(100)
+        # self.time_masking = tat.TimeMasking(100)
 
-        self.mfcc_dir  =  os.path.join(root, partition, 'mfcc')
+        self.mfcc_dir = os.path.join(root, partition, 'mfcc')
 
         mfcc_names = sorted(os.listdir(self.mfcc_dir))
 
@@ -156,13 +156,11 @@ class AudioTestDataset(torch.utils.data.Dataset):
 
         mfcc_names = mfcc_names[:subset_size]
 
-
-        self.mfccs= []
+        self.mfccs = []
 
         for i in tqdm(range(len(mfcc_names))):
-
             mfcc = np.load(os.path.join(self.mfcc_dir, mfcc_names[i]))
-            mfccs_normalized = mfcc - np.mean(mfcc, axis=0, keepdims=True)
+            mfccs_normalized = (mfcc - np.mean(mfcc, axis=0, keepdims=True)) / np.std(mfcc, axis=0, keepdims=True)
 
             mfccs_normalized = torch.tensor(mfccs_normalized, dtype=torch.float32)
 
@@ -170,19 +168,18 @@ class AudioTestDataset(torch.utils.data.Dataset):
 
         self.mfccs = torch.cat(self.mfccs, dim=0)
         self.length = len(self.mfccs)
-        self.mfccs = nn.functional.pad(self.mfccs, (0, 0, self.context, self.context)) # TODO
-
+        self.mfccs = nn.functional.pad(self.mfccs, (0, 0, self.context, self.context))  # TODO
 
     def __len__(self):
         return self.length
 
     def collate_fn(self, batch):
-      return torch.stack(batch, dim=0)
+        return torch.stack(batch, dim=0)
 
     def __getitem__(self, ind):
         # TODO: Based on context and offset, return a frame at given index with context frames to the left, and right.
-        start = idx
-        end = idx + 2 * self.context + 1
+        start = ind
+        end = ind + 2 * self.context + 1
         frames = self.mfccs[start:end, :]
 
         # After slicing, you get an array of shape 2*context+1 x 28.
