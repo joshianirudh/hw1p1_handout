@@ -30,14 +30,14 @@ PHONEMES = [
 config = {
     'Name': '', # Write your name here
     'subset': 1.0, # Subset of dataset to use (1.0 == 100% of data)
-    'context': 30,
+    'context': 50,
     'archetype': 'diamond', # Default Values: pyramid, diamond, inverse-pyramid,cylinder
     'activations': 'GELU',
     'learning_rate': 0.001,
     'dropout': 0.25,
     'optimizers': 'SGD',
     'scheduler': 'ReduceLROnPlateau',
-    'epochs': 30,
+    'epochs': 14,
     'batch_size': 2048,
     'weight_decay': 0.05,
     'weight_initialization': None, # e.g kaiming_normal, kaiming_uniform, uniform, xavier_normal or xavier_uniform
@@ -237,22 +237,6 @@ print("Train dataset samples = {}, batches = {}".format(train_data.__len__(), le
 print("Validation dataset samples = {}, batches = {}".format(val_data.__len__(), len(val_loader)))
 print("Test dataset samples = {}, batches = {}".format(test_data.__len__(), len(test_loader)))
 
-# import matplotlib.pyplot as plt
-#
-# # Testing code to check if your data loaders are working
-# for data in train_loader:
-#     frames, phoneme = data
-#     print(frames.shape, phoneme.shape)
-#
-#     # Visualize sample mfcc to inspect and verify everything is correctly done, especially augmentations
-#     plt.figure(figsize=(10, 6))
-#     plt.imshow(frames[0].numpy().T, aspect='auto', origin='lower', cmap='viridis')
-#     plt.xlabel('Time')
-#     plt.ylabel('Features')
-#     plt.title('Feature Representation')
-#     plt.show()
-#
-#     break
 
 # Testing code to check if your validation data loaders are working
 all = []
@@ -266,35 +250,32 @@ class Network(nn.Module):
     def __init__(self, input_size, output_size):
         super(Network, self).__init__()
 
-        # self.model = nn.Sequential(
-        #     torch.nn.Linear(input_size, 512),
-        #     nn.BatchNorm1d(512),
-        #     torch.nn.ReLU(),
-        #     nn.Dropout(0.2),
-        #     torch.nn.Linear(512, 1024),
-        #     nn.BatchNorm1d(1024),
-        #     torch.nn.ReLU(),
-        #     nn.Dropout(0.3),
-        #     torch.nn.Linear(1024, 1024),
-        #     nn.BatchNorm1d(1024),
-        #     torch.nn.ReLU(),
-        #     nn.Dropout(0.3),
-        #     torch.nn.Linear(1024, 512),
-        #     nn.BatchNorm1d(512),
-        #     torch.nn.ReLU(),
-        #     nn.Dropout(0.2),
-        #     torch.nn.Linear(512, output_size)
-        #
         self.model = nn.Sequential(
             torch.nn.Linear(input_size, 512),
-            torch.nn.Dropout(0.2),
+            nn.BatchNorm1d(512),
             torch.nn.ReLU(),
-            torch.nn.Linear(512, 256),
+            nn.Dropout(0.2),
+            torch.nn.Linear(512, 1024),
+            nn.BatchNorm1d(1024),
             torch.nn.ReLU(),
-            torch.nn.Linear(256, 128),
-            torch.nn.Dropout(0.2),
+            nn.Dropout(0.3),
+            torch.nn.Linear(1024, 2048),
+            nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, output_size)
+            nn.Dropout(0.3),
+            torch.nn.Linear(2048, 2048),
+            nn.BatchNorm1d(2048),
+            torch.nn.ReLU(),
+            nn.Dropout(0.3),
+            torch.nn.Linear(2048, 1024),
+            nn.BatchNorm1d(1024),
+            torch.nn.ReLU(),
+            nn.Dropout(0.3),
+            torch.nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            torch.nn.ReLU(),
+            nn.Dropout(0.2),
+            torch.nn.Linear(512, output_size)
         )
 
         if config['weight_initialization'] is not None:
@@ -367,36 +348,20 @@ def train(model, dataloader, optimizer, criterion):
 
     for i, (frames, phonemes) in enumerate(dataloader):
 
-        ### Initialize Gradients
         optimizer.zero_grad()
 
         frames = frames.to(device)
         phonemes = phonemes.to(device)
 
-        with torch.autocast(device_type=device, dtype=torch.float16):
-            ### Forward Propagation
-            logits  = model(frames)
+        logits = model(frames)
+        loss = criterion(logits, phonemes)
 
-            ### Loss Calculation
-            loss    = criterion(logits, phonemes)
+        # Backward pass
+        loss.backward()
+        optimizer.step()
 
-        ### Backward Propagation
-        scaler.scale(loss).backward()
-
-        # OPTIONAL: You can add gradient clipping here, if you face issues of exploding gradients
-
-        ### Gradient Descent
-        scaler.step(optimizer)
-        scaler.update()
-        # logits = model(frames)
-        # loss = criterion(logits, phonemes)
-
-        # # Backward pass
-        # loss.backward()
-        # optimizer.step()
-
-        tloss   += loss.item()
-        tacc    += torch.sum(torch.argmax(logits, dim= 1) == phonemes).item()/logits.shape[0]
+        tloss += loss.item()
+        tacc  += torch.sum(torch.argmax(logits, dim= 1) == phonemes).item()/logits.shape[0]
 
         batch_bar.set_postfix(loss="{:.04f}".format(float(tloss / (i + 1))),
                               acc="{:.04f}%".format(float(tacc*100 / (i + 1))))
@@ -404,7 +369,7 @@ def train(model, dataloader, optimizer, criterion):
 
         ### Release memory
         del frames, phonemes, logits
-        torch.cuda.empty_cache()
+        torch.mps.empty_cache()
 
 
     batch_bar.close()
@@ -433,8 +398,8 @@ def eval(model, dataloader):
             ### Loss Calculation
             loss    = criterion(logits, phonemes)
 
-        vloss   += loss.item()
-        vacc    += torch.sum(torch.argmax(logits, dim= 1) == phonemes).item()/logits.shape[0]
+        vloss += loss.item()
+        vacc  += torch.sum(torch.argmax(logits, dim= 1) == phonemes).item()/logits.shape[0]
 
         # Do you think we need loss.backward() and optimizer.step() here?
 
