@@ -369,7 +369,7 @@ def train(model, dataloader, optimizer, criterion):
 
         ### Release memory
         del frames, phonemes, logits
-        torch.mps.empty_cache()
+        torch.cuda.empty_cache()
 
 
     batch_bar.close()
