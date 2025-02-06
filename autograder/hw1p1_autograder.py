@@ -1808,6 +1808,7 @@ TEST_loss = (
     TEST_crossentropyloss_L and
     TEST_crossentropyloss_dLdA)
 
+print(TEST_linear_Z ,TEST_linear_dLdA, TEST_linear_dLdW ,TEST_linear_dLdb)
 TEST_linear = (
     TEST_linear_Z and
     TEST_linear_dLdA and

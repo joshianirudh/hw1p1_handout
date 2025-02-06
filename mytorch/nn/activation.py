@@ -36,8 +36,14 @@ class Sigmoid:
     Define 'backward' function.
     Read the writeup (Hint: Sigmoid Section) for further details on Sigmoid forward and backward expressions.
     """
-
-
+    def forward(self, Z):
+        self.A = 1 / (1 + np.exp(-Z))
+        return self.A
+    def backward(self, dLdA):
+        self.dLdA = dLdA
+        self.dAdZ = self.A * (1- self.A)
+        self.dLdZ = self.dLdA * self.dAdZ
+        return self.dLdZ
 class Tanh:
     """
     Tanh activation function.
@@ -48,6 +54,14 @@ class Tanh:
     Define 'backward' function.
     Read the writeup (Hint: Tanh Section) for further details on Tanh forward and backward expressions.
     """
+    def forward(self, Z):
+        self.A = (np.exp(Z) - np.exp(-Z))/ (np.exp(Z) + np.exp(-Z))
+        return self.A
+    def backward(self, dLdA):
+        self.dLdA = dLdA
+        self.dAdZ =  1 - (self.A ** 2)
+        self.dLdZ = self.dLdA * self.dAdZ
+        return self.dLdZ
 
 
 class ReLU:
@@ -60,6 +74,14 @@ class ReLU:
     Define 'backward' function.
     Read the writeup (Hint: ReLU Section) for further details on ReLU forward and backward expressions.
     """
+    def forward(self, Z):
+        self.A = np.maximum(0, Z)
+        return self.A
+    def backward(self, dLdA):
+        self.dLdA = dLdA
+        self.dAdZ = np.where(self.A>0, 1, 0)
+        self.dLdZ = self.dLdA * self.dAdZ
+        return self.dLdZ
 
 
 class GELU:
@@ -74,6 +96,16 @@ class GELU:
     Note: Feel free to save any variables from gelu.forward that you might need for gelu.backward.
     """
 
+    def forward(self, Z):
+        self.Z = Z
+        self.erf = (1 + scipy.special.erf(Z / np.sqrt(2)))
+        self.A = 0.5 * Z * self.erf
+        return self.A
+    def backward(self, dLdA):
+        self.dLdA = dLdA
+        self.dAdZ = 0.5 * (self.erf) + (self.Z / np.sqrt(2*np.pi))  * np.exp(- self.Z ** 2 / 2)
+        self.dLdZ = self.dLdA * self.dAdZ
+        return self.dLdZ
 
 class Softmax:
     """
@@ -93,30 +125,37 @@ class Softmax:
         It will use an entire row of Z to compute an output element.
         Note: How can we handle large overflow values? Hint: Check numerical stability.
         """
-        self.A = None  # TODO
-        raise NotImplementedError  # TODO - What should be the return value?
+        Z_max = np.max(Z, axis=1, keepdims=True)
+        exp_Z = np.exp(Z - Z_max)
+        self.A = exp_Z / np.sum(exp_Z, axis=1, keepdims=True)
+        return self.A
+
 
     def backward(self, dLdA):
-        # Calculate the batch size and number of features
-        N = None  # TODO
-        C = None  # TODO
+            # Calculate the batch size and number of features
+            N = dLdA.shape[0]  # TODO
+            C = dLdA.shape[1]  # TODO
 
-        # Initialize the final output dLdZ with all zeros. Refer to the writeup and think about the shape.
-        dLdZ = None  # TODO
+            # Initialize the final output dLdZ with all zeros. Refer to the writeup and think about the shape.
+            dLdZ = np.zeros((N, C)) # TODO
 
-        # Fill dLdZ one data point (row) at a time.
-        for i in range(N):
-            # Initialize the Jacobian with all zeros.
-            # Hint: Jacobian matrix for softmax is a _×_ matrix, but what is _ here?
-            J = None  # TODO
+            # Fill dLdZ one data point (row) at a time.
+            for i in range(N):
+                # Initialize the Jacobian with all zeros.
+                # Hint: Jacobian matrix for softmax is a _×_ matrix, but what is _ here?
+                J = np.zeros((C, C))  # TODO
 
-            # Fill the Jacobian matrix, please read the writeup for the conditions.
-            for m in range(C):
-                for n in range(C):
-                    J[m, n] = None  # TODO
+                # Fill the Jacobian matrix, please read the writeup for the conditions.
+                for m in range(C):
+                    for n in range(C):
+                        if m == n:
+                            J[m, n] = self.A[i, m] * (1 - self.A[i, m])
+                        else:
+                            J[m, n] = -self.A[i, m] * self.A[i, n]
 
-            # Calculate the derivative of the loss with respect to the i-th input, please read the writeup for it.
-            # Hint: How can we use (1×C) and (C×C) to get (1×C) and stack up vertically to give (N×C) derivative matrix?
-            dLdZ[i, :] = None  # TODO
 
-        raise NotImplementedError  # TODO - What should be the return value?
+                # Calculate the derivative of the loss with respect to the i-th input, please read the writeup for it.
+                # Hint: How can we use (1×C) and (C×C) to get (1×C) and stack up vertically to give (N×C) derivative matrix?
+                dLdZ[i, :] = np.dot(dLdA[i], J)
+
+            return dLdZ

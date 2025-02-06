@@ -41,5 +41,4 @@ class Linear:
 
         if self.debug:
             self.dLdA = dLdA
-        print(dLdA)
         return dLdA  # TODO - What should be the return value?
